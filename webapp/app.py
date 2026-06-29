@@ -1,8 +1,9 @@
-import matplotlib.pyplot as plt
 from tf_keras_vis.gradcam import Gradcam
 from tf_keras_vis.utils.model_modifiers import ReplaceToLinear
 from tf_keras_vis.utils.scores import CategoricalScore
+
 from flask import Flask, render_template, request
+
 import tensorflow as tf
 import numpy as np
 import os
@@ -12,11 +13,12 @@ import cv2
 app = Flask(__name__)
 
 
-MODEL_PATH="../models/efficientnet.h5"
+BASE_DIR = os.path.dirname(
+    os.path.dirname(
+        os.path.abspath(__file__)
+    )
+)
 
-import os
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 MODEL_PATH = os.path.join(
     BASE_DIR,
@@ -24,27 +26,23 @@ MODEL_PATH = os.path.join(
     "efficientnet.h5"
 )
 
-model = tf.keras.models.load_model(
-    MODEL_PATH,
-    compile=False
-)
-
-print("Model loaded successfully")
 
 model = tf.keras.models.load_model(
     MODEL_PATH,
     compile=False
 )
 
+print("MODEL LOADED")
 
-classes=[
+
+classes = [
     "Cancer",
     "Normal",
     "Precancer"
 ]
 
 
-UPLOAD_FOLDER=os.path.join(
+UPLOAD_FOLDER = os.path.join(
     app.root_path,
     "static",
     "uploads"
@@ -56,93 +54,44 @@ os.makedirs(
 )
 
 
-app.config["UPLOAD_FOLDER"]=UPLOAD_FOLDER
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 
 
 def preprocess_image(path):
 
-    img=cv2.imread(path)
+    img = cv2.imread(path)
 
-    img=cv2.resize(
+    img = cv2.resize(
         img,
-        (224,224)
-)
+        (300,300)
+    )
 
-    img=img.astype("float32")
+    img = img.astype("float32")
 
 
-    img=tf.keras.applications.efficientnet.preprocess_input(
+    img = tf.keras.applications.efficientnet.preprocess_input(
         img
     )
 
 
-    img=np.expand_dims(
+    img = np.expand_dims(
         img,
         axis=0
     )
 
-
     return img
-def generate_gradcam(img, class_id):
 
-    def generate_gradcam(img, class_id):
+
+
+
+def generate_gradcam(img, class_id):
 
     gradcam = Gradcam(
         model,
         model_modifier=ReplaceToLinear()
     )
 
-    score = CategoricalScore(class_id)
-
-    cam = gradcam(
-        score,
-        img,
-        penultimate_layer=-1
-    )
-
-    heatmap = cam[0]
-
-    heatmap = cv2.resize(
-        heatmap,
-        (300,300)
-    )
-
-    heatmap = np.uint8(
-        255 * heatmap
-    )
-
-    colored = cv2.applyColorMap(
-        heatmap,
-        cv2.COLORMAP_JET
-    )
-
-    original = img[0]
-
-    original = (
-        original - original.min()
-    ) / (
-        original.max()-original.min()
-    )
-
-    original=np.uint8(original*255)
-
-    overlay=cv2.addWeighted(
-        original,
-        0.5,
-        colored,
-        0.5,
-        0
-    )
-
-    path="static/uploads/gradcam.jpg"
-
-    cv2.imwrite(path, overlay)
-
-    tf.keras.backend.clear_session()
-
-    return "gradcam.jpg"
-
 
     score = CategoricalScore(class_id)
 
@@ -178,7 +127,7 @@ def generate_gradcam(img, class_id):
 
 
     original = (
-        original - original.min()
+        original-original.min()
     ) / (
         original.max()-original.min()
     )
@@ -189,25 +138,30 @@ def generate_gradcam(img, class_id):
     )
 
 
-    overlay=cv2.addWeighted(
+    overlay = cv2.addWeighted(
         original,
-        0.6,
+        0.5,
         colored,
-        0.4,
+        0.5,
         0
     )
 
 
-    path="static/uploads/gradcam.jpg"
+    save_path = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        "gradcam.jpg"
+    )
 
 
     cv2.imwrite(
-        path,
+        save_path,
         overlay
     )
 
 
     return "gradcam.jpg"
+
+
 
 
 @app.route("/")
@@ -219,74 +173,78 @@ def home():
 
 
 
+
 @app.route(
     "/predict",
     methods=["POST"]
 )
-
-@app.route("/predict", methods=["POST"])
 def predict():
 
-    try:
-
-        file=request.files["image"]
-
-        path=os.path.join(
-            app.config["UPLOAD_FOLDER"],
-            file.filename
-        )
-
-        file.save(path)
-
-        print("IMAGE SAVED:", path)
-
-        img=preprocess_image(path)
-
-        print("IMAGE PREPROCESSED")
-
-        pred=model.predict(img)
-
-        print("PREDICTION DONE")
-
-        index=np.argmax(pred[0])
-
-        print("CLASS:", classes[index])
-
-        gradcam_image = generate_gradcam(
-            img,
-            index
-        )
-
-        print("GRADCAM DONE")
-
-        result=classes[index]
-
-        confidence=float(
-            np.max(pred[0])*100
-        )
-
-        return render_template(
-            "index.html",
-            result=result,
-            confidence=round(confidence,2),
-            image=file.filename,
-            gradcam=gradcam_image
-        )
+    file = request.files["image"]
 
 
-    except Exception as e:
-
-        print("ERROR:", e)
-
-        return str(e),500
-
+    path = os.path.join(
+        app.config["UPLOAD_FOLDER"],
+        file.filename
+    )
 
 
-import os
+    file.save(path)
+
+
+    print("IMAGE SAVED")
+
+
+    img = preprocess_image(path)
+
+
+    print("PREPROCESS DONE")
+
+
+    pred = model.predict(img)
+
+
+    index = np.argmax(
+        pred[0]
+    )
+
+
+    print(
+        "PREDICTION:",
+        classes[index]
+    )
+
+
+    gradcam_image = generate_gradcam(
+        img,
+        index
+    )
+
+
+    confidence = float(
+        np.max(pred[0])*100
+    )
+
+
+    return render_template(
+        "index.html",
+        result=classes[index],
+        confidence=round(confidence,2),
+        image=file.filename,
+        gradcam=gradcam_image
+    )
+
+
+
 
 if __name__ == "__main__":
-    import os
+
     app.run(
         host="0.0.0.0",
-        port=int(os.environ.get("PORT",5000))
+        port=int(
+            os.environ.get(
+                "PORT",
+                5000
+            )
+        )
     )
