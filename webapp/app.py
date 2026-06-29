@@ -44,7 +44,11 @@ classes=[
 ]
 
 
-UPLOAD_FOLDER="static/uploads"
+UPLOAD_FOLDER=os.path.join(
+    app.root_path,
+    "static",
+    "uploads"
+)
 
 os.makedirs(
     UPLOAD_FOLDER,
@@ -142,7 +146,12 @@ def generate_gradcam(img, class_id):
     )
 
 
-    path="static/uploads/gradcam.jpg"
+    path=os.path.join(
+    app.root_path,
+    "static",
+    "uploads",
+    "gradcam.jpg"
+)
 
 
     cv2.imwrite(
@@ -168,49 +177,61 @@ def home():
     methods=["POST"]
 )
 
+@app.route("/predict", methods=["POST"])
 def predict():
 
-    file=request.files["image"]
+    try:
+
+        file=request.files["image"]
+
+        path=os.path.join(
+            app.config["UPLOAD_FOLDER"],
+            file.filename
+        )
+
+        file.save(path)
+
+        print("IMAGE SAVED:", path)
+
+        img=preprocess_image(path)
+
+        print("IMAGE PREPROCESSED")
+
+        pred=model.predict(img)
+
+        print("PREDICTION DONE")
+
+        index=np.argmax(pred[0])
+
+        print("CLASS:", classes[index])
+
+        gradcam_image = generate_gradcam(
+            img,
+            index
+        )
+
+        print("GRADCAM DONE")
+
+        result=classes[index]
+
+        confidence=float(
+            np.max(pred[0])*100
+        )
+
+        return render_template(
+            "index.html",
+            result=result,
+            confidence=round(confidence,2),
+            image=file.filename,
+            gradcam=gradcam_image
+        )
 
 
-    path=os.path.join(
-        app.config["UPLOAD_FOLDER"],
-        file.filename
-    )
+    except Exception as e:
 
+        print("ERROR:", e)
 
-    file.save(path)
-
-
-
-    img=preprocess_image(path)
-
-
-
-    pred=model.predict(img)
-
-
-    index=np.argmax(pred[0])
-    gradcam_image = generate_gradcam(
-    img,
-    index
-)
-
-    result=classes[index]
-
-
-    confidence=float(
-        np.max(pred[0])*100
-    )
-
-
-    return render_template(
-        "index.html",
-        result=result,
-        confidence=round(confidence,2),
-        image=file.filename,
-        gradcam=gradcam_image
-    )
+        return str(e),500
 
 
 
