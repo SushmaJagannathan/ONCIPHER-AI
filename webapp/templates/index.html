@@ -12,54 +12,50 @@ ONCIPHER-AI Oral Cancer Detection
 <style>
 
 body{
-
-font-family:Arial;
-text-align:center;
-background:#f4f7fb;
-
+    font-family:Arial;
+    text-align:center;
+    background:#f4f7fb;
 }
 
 
 .box{
-
-margin:50px auto;
-padding:30px;
-background:white;
-width:500px;
-border-radius:15px;
-
+    margin:50px auto;
+    padding:30px;
+    background:white;
+    width:500px;
+    border-radius:15px;
 }
 
 
 button{
 
-background:#0066ff;
-color:white;
-padding:12px 25px;
-border:none;
-border-radius:8px;
+    background:#0066ff;
+    color:white;
+    padding:12px 25px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
 
 }
 
 
 .result{
 
-font-size:25px;
-color:#cc0000;
+    font-size:25px;
+    color:#cc0000;
 
 }
 
 
 img{
 
-margin-top:15px;
-border-radius:10px;
+    margin-top:15px;
+    border-radius:10px;
 
 }
 
 
 </style>
-
 
 </head>
 
@@ -86,7 +82,8 @@ method="post"
 enctype="multipart/form-data">
 
 
-<input type="file"
+<input 
+type="file"
 name="image"
 required>
 
@@ -94,7 +91,7 @@ required>
 <br><br>
 
 
-<button>
+<button type="submit">
 
 Analyze Image
 
@@ -130,14 +127,14 @@ Confidence:
 
 
 
-
 <h3>
 Uploaded Image
 </h3>
 
 
 <img 
-src="/static/uploads/{{image}}"
+src="{{ url_for('static',
+filename='uploads/'+image) }}"
 width="300">
 
 
@@ -153,8 +150,17 @@ AI Attention Map (Grad-CAM)
 
 
 <img 
-src="/static/uploads/{{gradcam}}"
+src="{{ url_for('static',
+filename='uploads/'+gradcam) }}"
 width="300">
+
+
+{% else %}
+
+
+<p>
+Grad-CAM not generated for this prediction.
+</p>
 
 
 {% endif %}

@@ -1,9 +1,8 @@
+flask
+gunicorn
 tensorflow-cpu==2.15.0
-flask==3.0.0
-numpy<2
+numpy
 opencv-python-headless
 pillow
-scikit-learn
 matplotlib
 tf-keras-vis
-gunicorn
