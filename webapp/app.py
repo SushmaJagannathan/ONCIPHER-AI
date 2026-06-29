@@ -13,6 +13,10 @@ import cv2
 app = Flask(__name__)
 
 
+# ===============================
+# PATH SETTINGS
+# ===============================
+
 BASE_DIR = os.path.dirname(
     os.path.dirname(
         os.path.abspath(__file__)
@@ -27,12 +31,16 @@ MODEL_PATH = os.path.join(
 )
 
 
+# ===============================
+# LOAD MODEL
+# ===============================
+
 model = tf.keras.models.load_model(
     MODEL_PATH,
     compile=False
 )
 
-print("MODEL LOADED")
+print("MODEL LOADED SUCCESSFULLY")
 
 
 classes = [
@@ -42,11 +50,17 @@ classes = [
 ]
 
 
+
+# ===============================
+# UPLOAD FOLDER
+# ===============================
+
 UPLOAD_FOLDER = os.path.join(
     app.root_path,
     "static",
     "uploads"
 )
+
 
 os.makedirs(
     UPLOAD_FOLDER,
@@ -58,16 +72,24 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 
 
+# ===============================
+# IMAGE PREPROCESS
+# ===============================
+
 def preprocess_image(path):
 
     img = cv2.imread(path)
+
 
     img = cv2.resize(
         img,
         (300,300)
     )
 
-    img = img.astype("float32")
+
+    img = img.astype(
+        "float32"
+    )
 
 
     img = tf.keras.applications.efficientnet.preprocess_input(
@@ -80,12 +102,20 @@ def preprocess_image(path):
         axis=0
     )
 
+
     return img
 
 
 
 
-def generate_gradcam(img, class_id):
+# ===============================
+# GRAD CAM
+# ===============================
+
+def generate_gradcam(
+        img,
+        class_id
+):
 
     try:
 
@@ -94,7 +124,11 @@ def generate_gradcam(img, class_id):
             model_modifier=ReplaceToLinear()
         )
 
-        score = CategoricalScore(class_id)
+
+        score = CategoricalScore(
+            class_id
+        )
+
 
         cam = gradcam(
             score,
@@ -102,28 +136,18 @@ def generate_gradcam(img, class_id):
             penultimate_layer=-1
         )
 
+
         heatmap = cam[0]
+
 
         heatmap = cv2.resize(
             heatmap,
             (300,300)
         )
 
+
         heatmap = np.uint8(
             255 * heatmap
-        )
-
-
-        original = img[0]
-
-        original = (
-            original-original.min()
-        ) / (
-            original.max()-original.min()
-        )
-
-        original = np.uint8(
-            original*255
         )
 
 
@@ -133,16 +157,31 @@ def generate_gradcam(img, class_id):
         )
 
 
+        original = img[0]
+
+
+        original = (
+            original - original.min()
+        ) / (
+            original.max()-original.min()
+        )
+
+
+        original = np.uint8(
+            original*255
+        )
+
+
         overlay = cv2.addWeighted(
             original,
-            0.7,
+            0.6,
             colored,
-            0.3,
+            0.4,
             0
         )
 
 
-        save_path=os.path.join(
+        save_path = os.path.join(
             app.config["UPLOAD_FOLDER"],
             "gradcam.jpg"
         )
@@ -154,19 +193,30 @@ def generate_gradcam(img, class_id):
         )
 
 
-        print("GRADCAM SAVED")
+        print(
+            "GRADCAM SAVED"
+        )
+
 
         return "gradcam.jpg"
 
 
     except Exception as e:
 
-        print("GRADCAM ERROR:",e)
+        print(
+            "GRADCAM ERROR:",
+            e
+        )
 
         return None
 
 
 
+
+
+# ===============================
+# HOME
+# ===============================
 
 @app.route("/")
 def home():
@@ -178,64 +228,89 @@ def home():
 
 
 
+
+# ===============================
+# PREDICTION
+# ===============================
+
+
 @app.route(
     "/predict",
     methods=["POST"]
 )
+
 def predict():
+
 
     file = request.files["image"]
 
 
-    path = os.path.join(
+
+    image_path = os.path.join(
         app.config["UPLOAD_FOLDER"],
         file.filename
     )
 
 
-    file.save(path)
-
-
-    print("IMAGE SAVED")
-
-
-    img = preprocess_image(path)
-
-
-    print("PREPROCESS DONE")
-
-
-    pred = model.predict(img)
-
-
-    index = np.argmax(
-        pred[0]
+    file.save(
+        image_path
     )
 
 
     print(
-        "PREDICTION:",
-        classes[index]
+        "IMAGE SAVED"
     )
 
 
-    gradcam_image = None
 
-if index in [0,2]:
+    img = preprocess_image(
+        image_path
+    )
+
+
+    print(
+        "IMAGE PREPROCESSED"
+    )
+
+
+
+    prediction = model.predict(
+        img
+    )
+
+
+    index = np.argmax(
+        prediction[0]
+    )
+
+
+    result = classes[index]
+
+
+    confidence = float(
+        np.max(prediction[0])*100
+    )
+
+
+
+    print(
+        "PREDICTION:",
+        result
+    )
+
+
+
+    # Generate GradCAM always
     gradcam_image = generate_gradcam(
         img,
         index
     )
 
 
-    confidence = float(
-        np.max(pred[0])*100
-    )
-
 
     return render_template(
         "index.html",
-        result=classes[index],
+        result=result,
         confidence=round(confidence,2),
         image=file.filename,
         gradcam=gradcam_image
@@ -243,6 +318,11 @@ if index in [0,2]:
 
 
 
+
+
+# ===============================
+# RUN
+# ===============================
 
 if __name__ == "__main__":
 

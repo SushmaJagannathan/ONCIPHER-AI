@@ -50,6 +50,14 @@ color:#cc0000;
 }
 
 
+img{
+
+margin-top:15px;
+border-radius:10px;
+
+}
+
+
 </style>
 
 
@@ -86,7 +94,7 @@ required>
 <br><br>
 
 
-<button type="submit">
+<button>
 
 Analyze Image
 
@@ -94,6 +102,7 @@ Analyze Image
 
 
 </form>
+
 
 
 
@@ -111,6 +120,7 @@ Prediction:
 </div>
 
 
+
 <h3>
 
 Confidence:
@@ -119,14 +129,36 @@ Confidence:
 </h3>
 
 
-<img src="/static/uploads/{{image}}">
+
+
+<h3>
+Uploaded Image
+</h3>
+
+
+<img 
+src="/static/uploads/{{image}}"
+width="300">
+
+
+
+
+
+{% if gradcam %}
+
+
 <h3>
 AI Attention Map (Grad-CAM)
 </h3>
 
 
-<img src="/static/uploads/{{gradcam}}"
+<img 
+src="/static/uploads/{{gradcam}}"
 width="300">
+
+
+{% endif %}
+
 
 
 {% endif %}
