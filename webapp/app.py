@@ -66,8 +66,8 @@ def preprocess_image(path):
 
     img=cv2.resize(
         img,
-        (300,300)
-    )
+        (224,224)
+)
 
     img=img.astype("float32")
 
@@ -86,10 +86,62 @@ def preprocess_image(path):
     return img
 def generate_gradcam(img, class_id):
 
+    def generate_gradcam(img, class_id):
+
     gradcam = Gradcam(
         model,
         model_modifier=ReplaceToLinear()
     )
+
+    score = CategoricalScore(class_id)
+
+    cam = gradcam(
+        score,
+        img,
+        penultimate_layer=-1
+    )
+
+    heatmap = cam[0]
+
+    heatmap = cv2.resize(
+        heatmap,
+        (300,300)
+    )
+
+    heatmap = np.uint8(
+        255 * heatmap
+    )
+
+    colored = cv2.applyColorMap(
+        heatmap,
+        cv2.COLORMAP_JET
+    )
+
+    original = img[0]
+
+    original = (
+        original - original.min()
+    ) / (
+        original.max()-original.min()
+    )
+
+    original=np.uint8(original*255)
+
+    overlay=cv2.addWeighted(
+        original,
+        0.5,
+        colored,
+        0.5,
+        0
+    )
+
+    path="static/uploads/gradcam.jpg"
+
+    cv2.imwrite(path, overlay)
+
+    tf.keras.backend.clear_session()
+
+    return "gradcam.jpg"
 
 
     score = CategoricalScore(class_id)
@@ -146,12 +198,7 @@ def generate_gradcam(img, class_id):
     )
 
 
-    path=os.path.join(
-    app.root_path,
-    "static",
-    "uploads",
-    "gradcam.jpg"
-)
+    path="static/uploads/gradcam.jpg"
 
 
     cv2.imwrite(
