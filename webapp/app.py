@@ -14,8 +14,9 @@ app = Flask(__name__)
 
 MODEL_PATH="../models/efficientnet.keras"
 
-model=tf.keras.models.load_model(
-    MODEL_PATH
+model = tf.keras.models.load_model(
+    "models/efficientnet.keras",
+    compile=False
 )
 
 
