@@ -12,7 +12,7 @@ import cv2
 app = Flask(__name__)
 
 
-MODEL_PATH="../models/efficientnet.keras"
+MODEL_PATH="../models/efficientnet.h5"
 
 import os
 
@@ -21,8 +21,15 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(
     BASE_DIR,
     "models",
-    "efficientnet.keras"
+    "efficientnet.h5"
 )
+
+model = tf.keras.models.load_model(
+    MODEL_PATH,
+    compile=False
+)
+
+print("Model loaded successfully")
 
 model = tf.keras.models.load_model(
     MODEL_PATH,
