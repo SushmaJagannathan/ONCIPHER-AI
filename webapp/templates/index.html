@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<title>
+ONCIPHER-AI Oral Cancer Detection
+</title>
+
+
+<style>
+
+body{
+
+font-family:Arial;
+text-align:center;
+background:#f4f7fb;
+
+}
+
+
+.box{
+
+margin:50px auto;
+padding:30px;
+background:white;
+width:500px;
+border-radius:15px;
+
+}
+
+
+button{
+
+background:#0066ff;
+color:white;
+padding:12px 25px;
+border:none;
+border-radius:8px;
+
+}
+
+
+.result{
+
+font-size:25px;
+color:#cc0000;
+
+}
+
+
+</style>
+
+
+</head>
+
+
+<body>
+
+
+<div class="box">
+
+
+<h1>
+ONCIPHER-AI
+</h1>
+
+
+<h3>
+Explainable Oral Cancer Detection
+</h3>
+
+
+
+<form action="/predict"
+method="post"
+enctype="multipart/form-data">
+
+
+<input type="file"
+name="image"
+required>
+
+
+<br><br>
+
+
+<button type="submit">
+
+Analyze Image
+
+</button>
+
+
+</form>
+
+
+
+{% if result %}
+
+
+<hr>
+
+
+<div class="result">
+
+Prediction:
+{{result}}
+
+</div>
+
+
+<h3>
+
+Confidence:
+{{confidence}} %
+
+</h3>
+
+
+<img src="/static/uploads/{{image}}">
+<h3>
+AI Attention Map (Grad-CAM)
+</h3>
+
+
+<img src="/static/uploads/{{gradcam}}"
+width="300">
+
+
+{% endif %}
+
+
+
+</div>
+
+
+</body>
+
+</html>
