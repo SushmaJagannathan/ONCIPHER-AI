@@ -87,79 +87,83 @@ def preprocess_image(path):
 
 def generate_gradcam(img, class_id):
 
-    gradcam = Gradcam(
-        model,
-        model_modifier=ReplaceToLinear()
-    )
+    try:
+
+        gradcam = Gradcam(
+            model,
+            model_modifier=ReplaceToLinear()
+        )
+
+        score = CategoricalScore(class_id)
+
+        cam = gradcam(
+            score,
+            img,
+            penultimate_layer=-1
+        )
+
+        heatmap = cam[0]
+
+        heatmap = cv2.resize(
+            heatmap,
+            (300,300)
+        )
+
+        heatmap = np.uint8(
+            255 * heatmap
+        )
 
 
-    score = CategoricalScore(class_id)
+        original = img[0]
+
+        original = (
+            original-original.min()
+        ) / (
+            original.max()-original.min()
+        )
+
+        original = np.uint8(
+            original*255
+        )
 
 
-    cam = gradcam(
-        score,
-        img,
-        penultimate_layer=-1
-    )
+        colored = cv2.applyColorMap(
+            heatmap,
+            cv2.COLORMAP_JET
+        )
 
 
-    heatmap = cam[0]
+        overlay = cv2.addWeighted(
+            original,
+            0.7,
+            colored,
+            0.3,
+            0
+        )
 
 
-    heatmap = cv2.resize(
-        heatmap,
-        (300,300)
-    )
+        save_path=os.path.join(
+            app.config["UPLOAD_FOLDER"],
+            "gradcam.jpg"
+        )
 
 
-    heatmap = np.uint8(
-        255 * heatmap
-    )
+        cv2.imwrite(
+            save_path,
+            overlay
+        )
 
 
-    colored = cv2.applyColorMap(
-        heatmap,
-        cv2.COLORMAP_JET
-    )
+        print("GRADCAM SAVED")
+
+        return "gradcam.jpg"
 
 
-    original = img[0]
+    except Exception as e:
 
+        print("GRADCAM ERROR:",e)
 
-    original = (
-        original-original.min()
-    ) / (
-        original.max()-original.min()
-    )
-
-
-    original = np.uint8(
-        original*255
-    )
-
-
-    overlay = cv2.addWeighted(
-        original,
-        0.5,
-        colored,
-        0.5,
-        0
-    )
-
-
-    save_path = os.path.join(
-        app.config["UPLOAD_FOLDER"],
-        "gradcam.jpg"
-    )
-
-
-    cv2.imwrite(
-        save_path,
-        overlay
-    )
-
-
-    return "gradcam.jpg"
+        return None
 
 
 
@@ -215,6 +219,9 @@ def predict():
     )
 
 
+    gradcam_image = None
+
+if index in [0,2]:
     gradcam_image = generate_gradcam(
         img,
         index
