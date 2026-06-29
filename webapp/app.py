@@ -14,8 +14,18 @@ app = Flask(__name__)
 
 MODEL_PATH="../models/efficientnet.keras"
 
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "models",
+    "efficientnet.keras"
+)
+
 model = tf.keras.models.load_model(
-    "models/efficientnet.keras",
+    MODEL_PATH,
     compile=False
 )
 
@@ -200,5 +210,8 @@ def predict():
 import os
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    import os
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT",5000))
+    )
